@@ -1,0 +1,29 @@
+# Referência local (clone MIT, não commitar)
+rawaccel-reference/
+
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+artifacts/
+out/
+publish/
+
+# Driver / WDK
+driver/x64/
+driver/ARM64/
+driver/Debug/
+*.sys
+*.pdb
+
+# Installer / packaging output
+packaging/out/
+*.exe
+!tools/**/*.exe
+
+# OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 144" width="400" height="144">
+  <defs>
+    <linearGradient id="bgGradD" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#202B3A"/>
+      <stop offset="1" stop-color="#0F151D"/>
+    </linearGradient>
+    <linearGradient id="emberGradD" gradientUnits="userSpaceOnUse" x1="54" y1="184" x2="206" y2="68">
+      <stop offset="0" stop-color="#FFB03A"/>
+      <stop offset="0.5" stop-color="#FF6A3A"/>
+      <stop offset="1" stop-color="#FF3D2E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- mark, 120px -->
+  <g transform="translate(12,12) scale(0.46875)">
+    <rect x="12" y="12" width="232" height="232" rx="52" fill="url(#bgGradD)"/>
+    <rect x="12.75" y="12.75" width="230.5" height="230.5" rx="51.25" fill="none" stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="1.5"/>
+    <path d="M 54 184 C 102 182, 118 170, 134 132 C 148 98, 166 82, 206 68"
+          fill="none" stroke="url(#emberGradD)" stroke-width="34" stroke-linecap="round" opacity="0.20"/>
+    <path d="M 54 184 C 102 182, 118 170, 134 132 C 148 98, 166 82, 206 68"
+          fill="none" stroke="url(#emberGradD)" stroke-width="19" stroke-linecap="round"/>
+    <circle cx="54" cy="184" r="12.5" fill="#35E0FF" stroke="#10161F" stroke-width="4.5"/>
+    <circle cx="54" cy="184" r="4.2" fill="#EAFCFF"/>
+    <circle cx="206" cy="68" r="6" fill="#FFD9A0"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="150" y="52" font-family="'Segoe UI', Arial, sans-serif" font-size="14.5" font-weight="600" letter-spacing="6" fill="#8E99AB" textLength="212" lengthAdjust="spacingAndGlyphs">PROJECT</text>
+  <text x="150" y="90" font-family="'Segoe UI', Arial, sans-serif" font-size="29" font-weight="800" letter-spacing="3" fill="#F4F7FC" textLength="212" lengthAdjust="spacingAndGlyphs">ACCEL</text>
+  <text x="150" y="118" font-family="'Segoe UI', Arial, sans-serif" font-size="8.2" font-weight="500" letter-spacing="2.1" fill="#566174" textLength="212" lengthAdjust="spacingAndGlyphs">MOUSE ACCELERATION, REIMAGINED</text>
+</svg>
