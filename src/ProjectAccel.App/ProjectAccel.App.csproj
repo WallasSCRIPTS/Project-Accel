@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\projectaccel.ico</ApplicationIcon>
@@ -12,27 +15,24 @@
     <InformationalVersion>0.1.0-dev</InformationalVersion>
     <Product>ProjectAccel</Product>
     <Company>ProjectAccel</Company>
-    <Description>Mouse acceleration, reimagined. Desktop app (Avalonia) for mouse acceleration at the driver level.</Description>
+    <Description>Mouse acceleration, reimagined. Native Windows host (WebView2) + React UI for ProjectAccel.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.6" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.6" />
-    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
-      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
-      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3537.50" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ProjectAccel.Core\ProjectAccel.Core.csproj" />
     <ProjectReference Include="..\ProjectAccel.Backend\ProjectAccel.Backend.csproj" />
+  </ItemGroup>
+
+  <!-- Build da UI em web/dist é copiado para <output>/wwwroot.
+       Gere-o com: cd web && npm ci && npm run build -->
+  <ItemGroup>
+    <Content Include="..\..\web\dist\**\*.*">
+      <Link>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

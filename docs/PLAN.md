@@ -1,183 +1,182 @@
 # ProjectAccel — Plano de Produto e Arquitetura
 
-> Mouse acceleration, reimagined. · App desktop moderno (Avalonia + .NET 8), driver próprio (KMDF), 100% independente.
+> Mouse acceleration, reimagined. · App desktop nativo, driver próprio em modo kernel,
+> UI minimalista dark-first.
 
-Status: **fase de planejamento** · Nome: **ProjectAccel** · Pasta: `Project Accel`
+Status: **Fase 0 concluída** · Nome: **ProjectAccel**
 
 ---
 
 ## 1. Visão
 
-Um sucessor espiritual do RawAccel com identidade própria: mais bonito, mais prático,
-mais seguro. O RawAccel provou o conceito (driver kernel-mode que acelera o cursor no
-raw input stream) mas a GUI dele é WinForms de 2019, com settings em `settings.json`
-no CWD e zero onboarding. O ProjectAccel entrega:
+Um acelerador de mouse em nível de kernel que respeita o usuário: curva de
+sensibilização transparente, perfis por jogo, instalação silenciosa e uma interface
+que dá prazer de usar. O vazio que estamos ocupando: os drivers existentes funcionam,
+mas entregam UIs de outra década, sem onboarding e com arquivos de configuração
+arcanos.
 
-1. **Visual moderno e escuro por padrão** (Avalonia, Fluent, tema próprio) com gráficos
-   suaves e responsivos das curvas.
-2. **Praticidade**: perfis nomeados por jogo, exportar/importar, presets de fábricas
-   conhecidas (Quake clásico, EPP, synchronous…), detecção de mudanças de DPI,
-   aplicação com 1 clique.
-3. **Transparência**: mostra o que o driver recebe (fórmula ativa, versão, estado),
-   logs locais, nada de telemetria escondida.
-4. **Segurança anti-abuso**: mantém o delay de 1 segundo na aplicação e a regra de
-   "fórmulas congeladas por versão" — postura anti-cheat do RawAccel, preservada.
+Pilares:
 
-### Honestidade sobre "100% independente"
+1. **Visual premium, minimalista** — vidro translúcido, glows de fundo discretos,
+   tipografia grande e calma, motion curto e sem frescura.
+2. **Praticidade** — perfis por jogo, duplicar/exportar/importar em JSON, preview de
+   cada curva antes de aplicar, DPI por dispositivo.
+3. **Transparência** — nada de telemetria escondida; o que o driver recebe é
+   inspecionável (fórmula ativa, versão, estado).
+4. **Postura anti-abuso** — delay de 1 segundo na aplicação e fórmulas congeladas
+   por versão. Nada que um anti-cheat sério possa confundir com trapaça.
 
-Um driver kernel x64 **não carrega no Windows 10/11 sem assinatura**. Caminho real:
+---
 
-- **Dev/teste**: test signing (`bcdedit /set testsigning on`) — funciona na máquina de
-  dev, **não serve para usuários finais** e é rejeitado por anti-cheats.
-- **Distribuição**: assinatura de *attestation* via Microsoft Hardware Dev Center, que
-  exige **certificado EV** (~US$ 300–700/ano) + conta de parceiro Microsoft + revisão
-  do driver (submissão, verificação). Prazo típico da 1ª submissão: semanas.
+## 2. Driver próprio: o que é preciso
+
+Um driver kernel x64 **não carrega no Windows 10/11 sem assinatura**. Isso define
+a ordem do projeto:
+
+- **Dev/teste**: test signing (`bcdedit /set testsigning on`) — funciona na máquina
+  de desenvolvedor. **Não serve para usuário final** e anti-cheats não perdoam.
+- **Distribuição**: assinatura *attestation* via Microsoft Hardware Dev Center —
+  exige **certificado EV** (~US$ 300–700/ano), conta de parceiro Microsoft e revisão
+  do driver (submissão e verificação). Prazo típico da 1ª submissão: semanas.
 - **Anti-cheat**: nenhum driver novo chega com passe livre para Vanguard/EAC/BattlEye.
-  Mitigação: manter semântica conservadora (fórmulas congeladas, delay de 1s, nada de
-  hooking além do mouse class UpperFilters) e publicar hashes/assinatura para
-  verificação. Risco residual existe e deve estar claro para o usuário.
+  Mitigação: semântica conservadora (fórmulas congeladas por versão, delay de 1 s,
+  UpperFilter apenas no mouse class) e hashes publicados para verificação.
 
-**Decisão de arquitetura que viabiliza isso:** o app fala com o driver por uma
-**camada de abstração (`IAccelBackend`)**. Backends:
+A arquitetura por fases existe para isolar esse risco: o app nasce **usável** na
+Fase 1 (editor + backend simulado), e o driver só bloqueia a Fase 3.
 
-| Backend | Uso | Quando |
+| Fase | Backend | Entrega |
 |---|---|---|
-| `SimulatedBackend` | Matemática de curvas 100% no app (cálculo + gráficos), sem driver | Fase 0–1, desenvolvimento, modo "editor/simulador" |
-| `RawAccelBackend` *(dev only, opcional)* | Fala o protocolo IOCTL do RawAccel (`\\.\rawaccel`) | Validação de UX com driver real antes do nosso existir |
-| `ProjectAccelBackend` | IOCTL do **nosso** driver (`\\.\projectaccel`) | Fase 2+, produto final independente |
-
-O app nunca depende do RawAccel em produção: a independência é o destino; a abstração
-é só o andaime que nos deixa construir o produto antes do driver estar assinado.
+| 0 | — | Scaffold nativo + marca + build verde ✅ |
+| 1 | `SimulatedBackend` | Editor completo de curvas + perfis + import/export |
+| 2 | `ProjectAccelBackend` (test-signed) | Driver próprio aplicando no mouse (dev) |
+| 3 | `ProjectAccelBackend` (attestation) | Release v1.0 assinado, instalador, winget |
+| 4 | — | Comunidade: i18n, presets, roadmap público |
 
 ---
 
-## 2. Stack
+## 3. Stack
 
-| Camada | Tecnologia | Motivo |
+| Camada | Escolha | Por quê |
 |---|---|---|
-| UI | **Avalonia UI 11** (.NET 8 LTS) | XAML moderno, dark-first, renderiza curvas via GPU, mesmo stack que a UI 2.0 oficial adotou |
-| Gráficos de curva | **ScottPlot 5** (MIT) | Gráficos rápidos, tooltips, pan/zoom, sem dependência pesada |
-| Matemática de curvas | C# próprio em `ProjectAccel.Core` | Portabilidade app ↔ testes; driver tem a própria irmã em C++ |
-| Driver | C++17 + WDK (KMDF), UpperFilter no mouse class | Modelo provável, sem hacks |
-| Bridge app↔driver | P/Invoke (`DeviceIoControl`) direto de `ProjectAccel.Backend` | Sem C++/CLI (o RawAccel carrega esse legado; nós não precisamos) |
-| Persistência | JSON em `%AppData%\ProjectAccel\` | Perfis, devices, preferências — fora do CWD |
-| Instalador | Inno Setup 6 + assinatura Authenticode | Padrão Windows; instala driver + app com elevação |
-| Testes | xUnit (Core/Backend) + driver verification (WDK) | Curvas validadas contra vetores analíticos |
+| Shell nativo | **WinForms** (`net8.0-windows10.0.19041.0`) | Janela única, DWM dark caption, zero cerimônia, instalador simples |
+| Chromium host | **WebView2** (Runtime Evergreen, presente no Win10/11) | Rodar a UI React sem servidor HTTP: `appassets.local` → `wwwroot/` |
+| UI | **React 19 + TypeScript + Vite** (`web/`) | Componentes modernos; bundle ~78 KB gzip; HMR em dev |
+| Design language | Vidro (fills translúcidos + blur), glows de fundo, motion `cubic-bezier(.22,1,.36,1)` | Visual de player premium, minimalista — implementado à mão (ver §6) |
+| Ícones | **MingCute** (`@mingcute/react`) | Set open-source completo, Regular/Filled |
+| Gráficos (Fase 1) | Canvas próprio ou lib leve (decisão da Fase 1) | Sem requisito de WebGL |
+| Bridge | `chrome.webview.postMessage` ↔ `WebMessageReceived` | Mensagens JSON tipadas `{id, type}` → `{id, ok, payload|error}` |
+| Documento de domínio | C# (`ProjectAccel.Core`), testes xUnit | Matemática única de curvas |
+| Persistência | JSON em `%AppData%\ProjectAccel\` | Fora do CWD, escopo do usuário |
+| Instalador (Fase 3) | Inno Setup + assinatura Authenticode | Padrão Windows, elevação para o driver |
 
-Ambiente atual: **VS 2026 Community + MSBuild** instalado; **.NET SDK 8 ausente**
-(runtimes 8/10 presentes) → instalar com `winget install Microsoft.DotNet.SDK.8` na Fase 0.
+Ambiente de desenvolvimento atual: VS 2026 Community, .NET SDK 10 (SDK 8 também vale),
+Node 26/npm 11, WebView2 Runtime 157.
+
+### O bridge em uma linha
+
+`MainForm.OnWebMessageReceived` → `switch (type) { "ping" | "getProductInfo" | "openProjectDocs" }`
+→ `Reply(id, ok, payload)` via `PostWebMessageAsJson`. O React nunca fala com o driver.
 
 ---
 
-## 3. Estrutura da solução
+## 4. Estrutura da solução
 
 ```
 Project Accel/
-├── ProjectAccel.sln
 ├── src/
-│   ├── ProjectAccel.Core/          # Domínio: curvas, perfis, devices, EMA, validação (sem deps de UI)
-│   ├── ProjectAccel.Backend/       # IAccelBackend, SimulatedBackend, ProjectAccelBackend (IOCTL), (RawAccelBackend dev-only)
-│   ├── ProjectAccel.App/           # Avalonia: Views, ViewModels, navegação, temas, assets
-│   │   ├── Assets/                 # ícones, logo, fontes
-│   │   └── Themes/                 # paleta ProjectAccel (Graphite/Ember/Cyan)
-│   └── ProjectAccel.Installer/     # Inno Setup scripts
-├── driver/                         # Driver KMDF (projeto WDK separado, não na .sln principal)
-│   ├── src/                        # filter driver: IOCTL READ/WRITE/GET_VERSION, state por device
-│   └── inf/                        # INF de instalação
-├── tests/
-│   ├── ProjectAccel.Core.Tests/
-│   └── vectors/                    # vetores de curva analíticos compartilhados app↔driver
-├── assets/logo/                    # identidade visual (SVG fonte da verdade)
+│   ├── ProjectAccel.App/          # WinForms + WebView2 (host). Assets, MainForm, bridge
+│   ├── ProjectAccel.Core/         # Domínio: curvas, perfis, dispositivos, EMA, validação
+│   └── ProjectAccel.Backend/      # IAccelBackend, SimulatedBackend, ProjectAccelBackend (IOCTL)
+├── web/                           # UI React (Vite)
+│   ├── public/                    # estáticos (logo, badge, appicon)
+│   └── src/                       # App.tsx, bridge.ts, index.css (design system)
+├── driver/                        # (Fase 2) KMDF upper filter, INF de instalação
+├── tests/ProjectAccel.Core.Tests/ # xUnit — vetores de curva
+├── assets/logo/                   # marca: fonte .png (nó), variantes, squircle, .ico
 ├── docs/
-├── packaging/                      # assinatura, winget manifest, release notes
-└── rawaccel-reference/             # clone de referência (gitignored, NUNCA commitar)
+└── packaging/                     # (Fase 3) winget manifest, scripts de assinatura
 ```
 
-### Fluxo de dados (runtime)
-
-```
-App (Avalonia) ──IOCTL──▶ \\.\projectaccel ──▶ driver: valida buffer → delay 1s → troca estado (paged pool)
-     ▲                                                            │
-     └── READ (estado ativo) / GET_VERSION ◀──────────────────────┘
-settings: %AppData%\ProjectAccel\settings.json + profiles\*.json
-```
+Build: `web/npm run build` → `web/dist/` → o `.csproj` copia para `wwwroot/` no
+`bin/` do host (via `Content` + `%(RecursiveDir)`). Sem servidor HTTP, sem porta.
 
 ---
 
-## 4. O que o app tem (escopo funcional)
+## 5. O que o app tem (escopo)
 
-**MVP (Fase 1 — Simulador completo, sem driver):**
-- Dashboard: perfil ativo, DPI/polling do mouse, estado do "driver" (simulado), quick actions
-- Editor de curvas: sensibilidade/velocidade/ganho × eixo (X/Y/combinado), com pontos ao vivo
-- Todos os accel modes: **Linear, Classic, Natural, Synchronous, Power, Jump, Lookup Table, Off**
-  (mesma família matemática do RawAccel — é a literatura conhecida — reimplementada)
-- Anisotropia: domain/range weights, rotação, angle snapping, Lp-norm, "Whole vs by Component"
-- Offsets (gain/legacy), Caps (in/out/io), smoothing EMA (input/scale/output)
-- Perfis por jogo: duplicar, renomear, exportar/importar, presets
-- Tema dark/ember/cyan + tema claro
-- Importar `settings.json` do RawAccel (migração de usuários — grande diferencial)
-- Editor LUT gráfico (arrastar pontos) — algo que o RawAccel só aceita por texto
+**Fase 1 (próxima):** editor de curvas (sensibilidade/velocidade/ganho × X/Y/combinado),
+todos os modos conhecidos (Linear, Classic, Natural, Synchronous, Power, Jump, Lookup
+Table, Off) com caps (in/out/io), offsets, anisotropia (domain/range weights, rotação,
+angle snap, Lp-norm, whole/by-component), smoothing EMA, perfis nomeados por jogo,
+exportar/importar JSON, DPI/polling por dispositivo.
 
-**Fase 2 — Driver próprio:** KMDF upper filter, IOCTLs próprios, state por device
-(instance-id), DPI normalization, rate limit de aplicação (1s), assinatura de teste.
+**Fase 2:** driver KMDF próprio: UpperFilter no mouse class, IOCTLs `READ`/`WRITE`/
+`GET_VERSION`, state por device (instance-id), DPI normalization, delay de 1 s na
+aplicação, assinatura de teste.
 
-**Fase 3 — Release:** cert EV, attestation signing, instalador assinado, landing/README,
-checksums, canal de updates, winget.
+**Fase 3:** attestation signing, instalador (driver + app) com elevação, checksums,
+canal de updates, winget submission.
 
 ---
 
-## 5. Identidade visual
+## 6. Identidade visual
 
-- **Nome**: ProjectAccel (pasta homônima; busca sem colisão no nicho — os resultados de
-  "Project Accelerator" são do Microsoft Project PPM, não conflitam).
-- **Tagline**: *Mouse acceleration, reimagined.*
-- **Conceito da marca**: "The Kick" — a curva de velocidade fazendo "hockey stick",
-  do nó ciano (input do mouse) até a faísca âmbar (cursor no alvo).
-- **Paleta**:
-  | Papel | Hex |
-  |---|---|
-  | Graphite 900 (fundo app) | `#10161F` |
-  | Graphite 800 (painel) | `#161E28` |
-  | Texto | `#E8EDF4` · secundário `#8E99AB` |
-  | Ember (gradiente da curva) | `#FFB03A → #FF6A3A → #FF3D2E` |
-  | Cyan (nó de input / acento) | `#35E0FF` |
-- **Assets** (`assets/logo/`): `projectaccel-mark.svg` (ícone), `-mono` (glyph neutra),
-  `lockup-dark`, `lockup-light`, `badge` (para README/marketings).
-- Tipografia sugerida: **Space Grotesk** (display) + **Inter** (texto) — livre do Google
-  Fonts; empacotar como recurso do app.
+**O NÓ** — marca isométrica intertravada (fonte `assets/logo/projectaccel-mark-black.png`,
+500×500, fundo transparente, monocromática). Variantes geradas:
 
-Observações: nome "Project" soa como codinome; no release público dá pra manter
-(ProjectAccel) ou encurtar para **Accel** — decisão de marca fica para depois do MVP.
-Sempre usar "ProjectAccel" como uma palavra no código/binário (`ProjectAccel.exe`).
+| Arquivo | Uso |
+|---|---|
+| `projectaccel-mark-white.png` | fundos escuros (app) |
+| `projectaccel-mark-black.png` | fundos claros / impressão |
+| `projectaccel-mark-ember.png` | destaque em material de marketing |
+| `projectaccel-appicon(-256).png` | squircle escuro + nó branco — ícone do app |
+| `projectaccel.ico` | ícone do executável/taskbar |
+| `projectaccel-badge.png` | README / capitas (848×336) |
+| `web/public/appicon.png` | hero da UI (cover 168px) |
 
----
+**Linguagem de design (própria, não copiada):** janela dark `#0d1219` com glows
+radiais quase invisíveis (âmbar 15% sup-dir, ciano 8% inf-esq); sidebar de vidro
+(rgba 4–10% + blur); fills translúcidos `subtle/fill/hover/strong`; hairlines
+`rgba(255,255,255,.08)`; radius 8/12/20; motion 140–380 ms com
+`cubic-bezier(.22,1,.36,1)`; Inter como tipografia; acento único ember `#ff6a3a`;
+séries de gráfico em âmbar/ciano. Ícones MingCute Regular (active: Filled/tinted).
 
-## 6. Roadmap
-
-| Fase | Entrega | Critério de pronto |
-|---|---|---|
-| **0** | Scaffold: solução, temas, logo, CI básico (build+test) | `dotnet build` verde; app abre em janela escura com o logo |
-| **1** | App simulador completo (editor de curvas, perfis, import RawAccel) | Usuário consegue montar e *sentir a diferença* nas curvas (preview), ainda sem aplicar no driver |
-| **2** | Driver ProjectAccel (test-signed) + `ProjectAccelBackend` | Aplicar settings reais no mouse na máquina de dev |
-| **3** | Release v1.0: EV cert, assinatura, instalador, docs, winget | Instalação limpa num Windows 10/11 vanilla, anti-cheat compat com a postura do RawAccel |
-| **4** | Comunidade/iteração: i18n PT/EN, presets por jogo, feedback | Roadmap público |
-
-Riscos: assinatura (custo/prazo) ⇢ mitigar com SimulatedBackend usável desde a Fase 1;
-anti-cheat ⇢ semântica conservadora + 1s de delay + hashes publicados; manutenção do
-driver ⇢ fases curtas e driver verification no CI.
+**Orientação sobre componentes de terceiros:**
+- `reactbits.dev` (free) e `transitions.dev` oferecem componentes/animações React;
+  os tiers **Pro são pagos** (licença comercial separada). Hoje a UI usa apenas
+  implementações próprias (Row, Chip, Button, Toast, Search) nessa mesma linguagem.
+- Nenhum arquivo de terceiros foi copiado para o repositório.
+- Quando o projeto tiver licença Pro (ou usarmos apenas os free), os componentes
+  ReactBits entram via `web/src/components/`, auditáveis um a um.
 
 ---
 
 ## 7. Licenciamento
 
-- Nosso código: **MIT** (compatível com o ecossistema; RawAccel também é MIT).
-- **Não copiar** arquivos do RawAccel verbatim para o driver sem necessidade; se algum
-  vetor matemático for derivado, manter attribution no `NOTICE`/`LICENSE` (o original é
-  © 2020 a1xd, MIT — permitido, desde que mantenha a nota).
-- O clone de referência (`rawaccel-reference/`) fica **gitignored** — consulta local apenas.
+- Nosso código: **MIT**.
+- Dependências npm: React (MIT), Vite (MIT), MingCute (open), Inter (OFL).
+- Marca: o nó é a identidade do ProjectAccel; o arquivo-fonte mora em `assets/logo/`.
+- Sem attribution de terceiros além dos listados no README (nenhum código de terceiros
+  foi copiado).
 
-## 8. Próximos passos imediatos
+---
 
-1. Aprovar este plano (e a identidade).
-2. Instalar .NET SDK 8 via winget; criar solution + projetos.
-3. Fase 0 → Fase 1: shell do app + editor de curvas (SimulatedBackend).
+## 8. Riscos e mitigações
+
+| Risco | Mitigação |
+|---|---|
+| Assinatura do driver (custo/prazo) | Fases 1–2 úteis sem release; EV cert reservado na Fase 3 |
+| Anti-cheat bloqueando driver novo | Semântica conservadora + hashes + 1 s de delay; protocolo de comunicação público |
+| Escopo escorregando para "clone de player de música" | Este documento é a âncora: driver primeiro, UI sempre a serviço do driver |
+| Retrabalho de UI | Design system congelado em `web/src/index.css` (§6); novos componentes entram como rows/chips/toasts |
+
+---
+
+## 9. Próximos passos imediatos
+
+1. ✅ Fase 0 — scaffold (este commit)
+2. **Fase 1** — `ProjectAccel.Core`: `CurveEvaluator` + `*.Tests` com vetores analíticos
+   (Linear, Classic, Natural, Synchronous, Power, Jump, LUT) + editor React com canvas.
+3. Branding final pós-decisão de marca (o nó já é definitivo salvo veto).
+4. `driver/` — criar projeto WDK (UpperFilter) e driver de teste.

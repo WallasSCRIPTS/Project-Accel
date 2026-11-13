@@ -2,57 +2,55 @@
 
 **Mouse acceleration, reimagined.**
 
-App desktop moderno para aceleração de mouse no nível do driver — visual dark-first,
-curvas ao vivo, perfis por jogo e migração a partir do `settings.json` do RawAccel.
+App desktop nativo para aceleração de mouse em nível de kernel — visual premium
+dark-first, preview de curvas ao vivo e perfis por jogo.
 
-![ProjectAccel](assets/logo/projectaccel-badge.svg)
+![ProjectAccel](assets/logo/projectaccel-badge.png)
 
 ![Screenshot — Fase 0](docs/screenshot.png)
 
-> 🚧 **Status: Fase 0 concluída (scaffold).** A base está pronta: solução, tema dark,
-> marca, build limpo (0 erros) e janela inicial. Próxima etapa: **Fase 1** (editor de
-> curvas + backend simulado). Veja [`docs/PLAN.md`](docs/PLAN.md) para a visão completa.
+> 🚧 **Status: Fase 0 concluída** (scaffold nativo). Próxima etapa: **Fase 1** —
+> editor de curvas + backend simulado. Visão completa em [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Visão geral
 
 | | |
 |---|---|
-| **UI** | Avalonia UI 12 + .NET 8 (LTS) |
-| **Driver** | KMDF (kernel-mode, upper filter no mouse class), em desenvolvimento |
-| **Backend** | Camada `IAccelBackend`: simulador no app ↔ driver ProjectAccel (`\\.\projectaccel`) |
+| **UI** | React 19 + TypeScript (`web/`), servida num **WebView2** nativo |
+| **Host** | WinForms (`net8.0-windows10.0.19041.0`), janela única, dark caption |
+| **Driver** | KMDF (upper filter no mouse class), em desenvolvimento — Fase 2 |
+| **Backend** | Camada `IAccelBackend`: simulado (preview no app) ↔ driver próprio (`\\.\projectaccel`) |
+| **Ícones** | [MingCute](https://www.mingcute.com) |
 | **Licença** | MIT |
 
 ## Build & run
 
-Pré-requisitos: **.NET SDK 9 ou 10** para *buildar* (os source generators do Avalonia 12
-exigem Roslyn ≥ 4.14). O app roda em cima do runtime .NET 8.
+Pré-requisitos: **.NET SDK 8+** (SDK 10 recomendado), **Node 22+** / npm 10+,
+Windows 10/11 com WebView2 Evergreen (já vem com o Edge/VS 2026).
 
 ```powershell
+cd web
+npm ci
+npm run build
+cd ..
 dotnet build
-dotnet test
 dotnet run --project src/ProjectAccel.App
 ```
-
-> ⚠️ Windows SmartScreen/anti-cheat: nenhum driver de terceiros carrega em produção sem
-> assinatura. O driver próprio chega assinado na Fase 3 — até lá, o app opera em modo
-> simulado (preview de curvas, sem aplicar nada ao mouse). Detalhes em docs/PLAN.md.
 
 ## Estrutura
 
 ```
-src/       projetos .NET (App, Core, Backend)
-driver/    driver KMDF (projeto WDK separado, ainda não criado)
-assets/    identidade visual (logo SVG)
-docs/      plano de produto e arquitetura + screenshot
-tests/     vetores e testes de curvas
+src/ProjectAccel.App/       host nativo (WinForms + WebView2, bridge chrome.webview)
+src/ProjectAccel.Core/      domínio: curvas, perfis, dispositivos, KPIs (Fase 1)
+src/ProjectAccel.Backend/   IAccelBackend + SimulatedBackend / ProjectAccelBackend
+web/                        UI React (Vite) — build vai para wwwroot/ do host
+driver/                     driver KMDF (Fase 2, projeto WDK separado)
+assets/logo/                marca (o nó isométrico) em todas as variantes
+docs/                       plano de produto, screenshot
+tests/                      vetores de curva e testes de domínio
 ```
-
-## Referência
-
-O clone de referência do [RawAccel](https://github.com/RawAccelOfficial/rawaccel) vive em
-`rawaccel-reference/` (gitignored — consulta local apenas, licença MIT © 2020 a1xd).
 
 ## Créditos
 
-O ProjectAccel é um sucessor espiritual independente do RawAccel (simon, _m00se_ e
-comunidade). Sem afiliação com o projeto oficial.
+O ProjectAccel é um projeto independente, sem afiliação com nenhum outro software
+de aceleração de mouse. Ícones: MingCute (Apache-2.0/MIT conforme o arquivo de licença do pacote).

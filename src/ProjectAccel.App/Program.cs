@@ -1,24 +1,19 @@
-﻿using Avalonia;
-using System;
+﻿namespace ProjectAccel.App;
 
-namespace ProjectAccel.App;
-
-sealed class Program
+internal static class Program
 {
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
     [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
+    private static void Main()
+    {
+        ApplicationConfiguration.Initialize();
 
-    // Avalonia configuration, don't remove; also used by visual designer.
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-#if DEBUG
-            .WithDeveloperTools()
-#endif
-            .WithInterFont()
-            .LogToTrace();
+        // Instância única — o ícone de bandeja chega numa fase futura.
+        using var mutex = new Mutex(initiallyOwned: true, name: @"Local\ProjectAccel.SingleInstance", out var created);
+        if (!created)
+        {
+            return;
+        }
+
+        Application.Run(new MainForm());
+    }
 }

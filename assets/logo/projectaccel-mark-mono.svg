@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <!-- Monochrome glyph: uses currentColor. Set `color` on the parent, e.g. color:#fff -->
-  <path d="M 54 184 C 102 182, 118 170, 134 132 C 148 98, 166 82, 206 68"
-        fill="none" stroke="currentColor" stroke-width="19" stroke-linecap="round"/>
-  <circle cx="54" cy="184" r="12.5" fill="currentColor"/>
-  <circle cx="206" cy="68" r="6" fill="currentColor"/>
-</svg>

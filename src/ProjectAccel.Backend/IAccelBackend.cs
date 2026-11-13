@@ -10,9 +10,6 @@ public enum BackendKind
 
     /// <summary>IOCTL para o driver próprio do ProjectAccel (\\.\projectaccel). (Fase 2+)</summary>
     ProjectAccel,
-
-    /// <summary>DEV-ONLY: protocolo IOCTL do RawAccel. Nunca usado em produção/release.</summary>
-    RawAccelReference,
 }
 
 /// <summary>

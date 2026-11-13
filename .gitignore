@@ -1,6 +1,3 @@
-# Referência local (clone MIT, não commitar)
-rawaccel-reference/
-
 # .NET / Visual Studio
 bin/
 obj/
@@ -11,6 +8,11 @@ obj/
 artifacts/
 out/
 publish/
+
+# Node / React
+node_modules/
+ui-build/
+dist/
 
 # Driver / WDK
 driver/x64/
@@ -27,7 +29,4 @@ packaging/out/
 # OS
 Thumbs.db
 .DS_Store
-window-check.png
-app-err.txt
-app-out.txt
 *.log

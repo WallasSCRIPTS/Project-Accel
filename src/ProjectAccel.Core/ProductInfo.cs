@@ -10,5 +10,4 @@ public static class ProductInfo
     public const string Tagline = "Mouse acceleration, reimagined.";
     public const string Version = "0.1.0-dev";
     public const string BackendDevicePath = @"\\.\projectaccel";
-    public const string ReferenceDevicePath = @"\\.\rawaccel"; // referência (dev-only)
 }
