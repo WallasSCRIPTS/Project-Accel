@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -23,6 +25,8 @@ public sealed class MainForm : Form
 
     private const int WM_NCHITTEST = 0x0084;
     private const int WM_SIZE = 0x0005;
+    private const int WM_DISPLAYCHANGE = 0x007E;
+    private const int WM_SETTINGCHANGE = 0x001A;
     private const int WM_NCLBUTTONDOWN = 0x00A1;
     private const int HTCLIENT = 1;
     private const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12;
@@ -32,6 +36,12 @@ public sealed class MainForm : Form
 
     [DllImport("user32.dll")] private static extern bool ReleaseCapture();
     [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+    [StructLayout(LayoutKind.Sequential)] private struct RawInputDeviceList { public IntPtr Device; public uint Type; }
+    private sealed record MouseDeviceInfo(string Id, string Name);
+    private const uint RIM_TYPEMOUSE = 0;
+    private const uint RIDI_DEVICENAME = 0x20000007;
+    [DllImport("user32.dll", SetLastError = true)] private static extern uint GetRawInputDeviceList(IntPtr devices, ref uint count, uint size);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern uint GetRawInputDeviceInfo(IntPtr device, uint command, IntPtr data, ref uint size);
 
     private readonly WebView2 _webview = new() { Dock = DockStyle.Fill };
     private FormWindowState _lastState = FormWindowState.Normal;
@@ -50,7 +60,7 @@ public sealed class MainForm : Form
         ClientSize = new Size(1180, 720);
         MinimumSize = new Size(1000, 640);
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.FromArgb(0x0D, 0x12, 0x19);    // canto externo da região
+        UpdateThemeBackColor();
 
         Controls.Add(_webview);
         // dev: PROJECTACCEL_MAXIMIZED=1 abre a janela já maximizada (útil para screenshots)
@@ -63,6 +73,20 @@ public sealed class MainForm : Form
             ApplyRoundedRegion();
             await InitWebViewAsync();
         };
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        UpdateMaximizedBounds();
+    }
+
+    private void UpdateThemeBackColor()
+    {
+        using var personalization = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+            @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+        var useLightTheme = personalization?.GetValue("AppsUseLightTheme");
+        BackColor = useLightTheme is int value && value == 0 ? Color.Black : Color.White;
     }
 
     // ───────────────────────── cantos arredondados (região) ─────────────────────────
@@ -93,12 +117,27 @@ public sealed class MainForm : Form
         if (m.Msg == WM_SIZE)
         {
             base.WndProc(ref m);
+            UpdateMaximizedBounds();
             ApplyRoundedRegion();
             if (_lastState != WindowState)
             {
                 _lastState = WindowState;
                 _ = PostStateAsync();
             }
+            return;
+        }
+
+        if (m.Msg == WM_DISPLAYCHANGE)
+        {
+            base.WndProc(ref m);
+            UpdateMaximizedBounds();
+            return;
+        }
+
+        if (m.Msg == WM_SETTINGCHANGE)
+        {
+            base.WndProc(ref m);
+            UpdateThemeBackColor();
             return;
         }
 
@@ -125,6 +164,12 @@ public sealed class MainForm : Form
         }
 
         base.WndProc(ref m);
+    }
+
+    private void UpdateMaximizedBounds()
+    {
+        if (!IsHandleCreated) return;
+        MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
     }
 
     // ───────────────────────── WebView2 ─────────────────────────
@@ -216,6 +261,10 @@ public sealed class MainForm : Form
                     Reply(id, ok, payload, error);
                     break;
 
+                case "getMouseDevices":
+                    Reply(id, ok: true, payload: new { devices = EnumerateMouseDevices() });
+                    break;
+
                 case "windowGetState":
                     Reply(id, ok: true, payload: new { maximized = WindowState == FormWindowState.Maximized });
                     break;
@@ -226,6 +275,7 @@ public sealed class MainForm : Form
                     break;
 
                 case "windowToggleMaximize":
+                    UpdateMaximizedBounds();
                     WindowState = WindowState == FormWindowState.Maximized
                         ? FormWindowState.Normal
                         : FormWindowState.Maximized; // WM_SIZE cuida da região e do push
@@ -278,6 +328,57 @@ public sealed class MainForm : Form
         catch (Exception ex)
         {
             return (false, null, ex.Message);
+        }
+    }
+
+    private static IReadOnlyList<MouseDeviceInfo> EnumerateMouseDevices()
+    {
+        uint count = 0;
+        uint itemSize = (uint)Marshal.SizeOf<RawInputDeviceList>();
+        if (GetRawInputDeviceList(IntPtr.Zero, ref count, itemSize) == uint.MaxValue || count == 0)
+            return Array.Empty<MouseDeviceInfo>();
+
+        IntPtr devices = Marshal.AllocHGlobal(checked((int)(count * itemSize)));
+        try
+        {
+            uint actualCount = count;
+            if (GetRawInputDeviceList(devices, ref actualCount, itemSize) == uint.MaxValue)
+                return Array.Empty<MouseDeviceInfo>();
+
+            var found = new List<MouseDeviceInfo>();
+            for (uint i = 0; i < actualCount; i++)
+            {
+                var item = Marshal.PtrToStructure<RawInputDeviceList>(IntPtr.Add(devices, checked((int)(i * itemSize))));
+                if (item.Type != RIM_TYPEMOUSE) continue;
+
+                uint chars = 0;
+                if (GetRawInputDeviceInfo(item.Device, RIDI_DEVICENAME, IntPtr.Zero, ref chars) == uint.MaxValue || chars == 0)
+                    continue;
+
+                IntPtr nameBuffer = Marshal.AllocHGlobal(checked((int)(chars * sizeof(char))));
+                try
+                {
+                    if (GetRawInputDeviceInfo(item.Device, RIDI_DEVICENAME, nameBuffer, ref chars) == uint.MaxValue)
+                        continue;
+                    string path = Marshal.PtrToStringUni(nameBuffer) ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(path)) continue;
+                    string[] identifiers = path.Split('#').ElementAtOrDefault(1)?.Split('&') ?? Array.Empty<string>();
+                    string vid = identifiers.FirstOrDefault(part => part.StartsWith("VID_", StringComparison.OrdinalIgnoreCase))?[4..] ?? string.Empty;
+                    string pid = identifiers.FirstOrDefault(part => part.StartsWith("PID_", StringComparison.OrdinalIgnoreCase))?[4..] ?? string.Empty;
+                    string name = vid.Length > 0 && pid.Length > 0 ? $"Mouse · {vid}:{pid}" : "Mouse conectado";
+                    string id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(path)))[..16];
+                    found.Add(new MouseDeviceInfo(id, name));
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(nameBuffer);
+                }
+            }
+            return found.DistinctBy(device => device.Id).ToArray();
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(devices);
         }
     }
 

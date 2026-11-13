@@ -71,7 +71,6 @@ export function TitleBar({ onCloseRequest }: TitleBarProps) {
 
   return (
     <header className="titlebar" onMouseDown={onDragStart} onDoubleClick={toggleMax}>
-      <img className="titlebar-logo" src="./logo.png" alt="ProjectAccel" width={17} height={17} draggable={false} />
       <span className="titlebar-spacer" data-drag />
       <div className="title-actions">
         <TitleButton label="Minimizar" kind="min" onClick={minimize} />

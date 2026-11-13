@@ -33,17 +33,19 @@ export function ParamField({ label, value, min, max, step, onChange }: ParamFiel
           aria-label={label}
         />
       </div>
-      <input
-        className="param-slider"
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={onInput}
-        style={{ ["--fill" as string]: `${pct}%` }}
-        aria-label={label}
-      />
+      <span className="param-slider-wrap" style={{ ["--progress" as string]: `${pct}%` }}>
+        <span className="param-slider-track" aria-hidden="true"><span /></span>
+        <input
+          className="param-slider"
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={onInput}
+          aria-label={label}
+        />
+      </span>
     </label>
   );
 }

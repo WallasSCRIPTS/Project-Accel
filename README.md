@@ -1,56 +1,72 @@
-# ProjectAccel
+<div align="center">
+  <img src="assets/logo/projectaccel-badge.png" alt="ProjectAccel" width="112" />
+  <h1>ProjectAccel</h1>
+  <p><strong>Mouse acceleration, reimagined.</strong></p>
+  <p>A clean, native Windows workspace for shaping and previewing mouse response curves.</p>
+  <p>
+    <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-111111?style=flat-square">
+    <img alt="License" src="https://img.shields.io/badge/license-MIT-111111?style=flat-square">
+  </p>
+</div>
 
-**Mouse acceleration, reimagined.**
+> **Project status:** the Windows app currently provides a live curve editor and device information. Applying curves to mouse input is not available yet; the native mouse driver is still under development. The current editor is a preview and does not change system pointer behavior.
 
-App desktop nativo para aceleração de mouse em nível de kernel — visual premium
-dark-first, preview de curvas ao vivo e perfis por jogo.
+## What it does
 
-![ProjectAccel](assets/logo/projectaccel-badge.png)
+- Preview eight response modes, including classic, natural, synchronous, jump, and lookup table curves.
+- Tune curve parameters and drag lookup table points, with optional 15° angle snapping.
+- Switch between light and dark themes, or follow the system setting.
+- Use the interface in Portuguese, English, Spanish, or Russian.
+- Inspect connected mouse devices and save local DPI and polling-rate notes.
+- Run in a native Windows window powered by WinForms and WebView2.
 
-![Screenshot — Fase 0](docs/screenshot.png)
+## Download
 
-> 🚧 **Status: Fase 0 concluída** (scaffold nativo). Próxima etapa: **Fase 1** —
-> editor de curvas + backend simulado. Visão completa em [`docs/PLAN.md`](docs/PLAN.md).
+Windows x64 releases will be available from this repository's **Releases** page. Packages require the Microsoft Edge WebView2 Runtime. If a release is not available yet, build the app from source using the steps below.
 
-## Visão geral
+## Build from source
 
-| | |
-|---|---|
-| **UI** | React 19 + TypeScript (`web/`), servida num **WebView2** nativo |
-| **Host** | WinForms (`net8.0-windows10.0.19041.0`), janela única, dark caption |
-| **Driver** | KMDF (upper filter no mouse class), em desenvolvimento — Fase 2 |
-| **Backend** | Camada `IAccelBackend`: simulado (preview no app) ↔ driver próprio (`\\.\projectaccel`) |
-| **Ícones** | [MingCute](https://www.mingcute.com) |
-| **Licença** | MIT |
-
-## Build & run
-
-Pré-requisitos: **.NET SDK 8+** (SDK 10 recomendado), **Node 22+** / npm 10+,
-Windows 10/11 com WebView2 Evergreen (já vem com o Edge/VS 2026).
+Requirements: Windows 10/11, .NET SDK 8 or newer, Node.js 22 or newer, and the WebView2 Runtime.
 
 ```powershell
 cd web
 npm ci
 npm run build
 cd ..
-dotnet build
+dotnet build ProjectAccel.sln -c Release
 dotnet run --project src/ProjectAccel.App
 ```
 
-## Estrutura
+## Project layout
 
-```
-src/ProjectAccel.App/       host nativo (WinForms + WebView2, bridge chrome.webview)
-src/ProjectAccel.Core/      domínio: curvas, perfis, dispositivos, KPIs (Fase 1)
-src/ProjectAccel.Backend/   IAccelBackend + SimulatedBackend / ProjectAccelBackend
-web/                        UI React (Vite) — build vai para wwwroot/ do host
-driver/                     driver KMDF (Fase 2, projeto WDK separado)
-assets/logo/                marca (o nó isométrico) em todas as variantes
-docs/                       plano de produto, screenshot
-tests/                      vetores de curva e testes de domínio
-```
+| Path | Purpose |
+| --- | --- |
+| `web/` | React + TypeScript interface and curve preview |
+| `src/ProjectAccel.App/` | Native WinForms host and WebView2 bridge |
+| `src/ProjectAccel.Core/` | Curve and product domain code |
+| `src/ProjectAccel.Backend/` | Backend abstraction for preview and future driver integration |
+| `tests/` | Core behavior tests |
+| `docs/PLAN.md` | Product and engineering roadmap |
 
-## Créditos
+## Releases
 
-O ProjectAccel é um projeto independente, sem afiliação com nenhum outro software
-de aceleração de mouse. Ícones: MingCute (Apache-2.0/MIT conforme o arquivo de licença do pacote).
+Create a version tag such as `v0.2.0` to build and publish a Windows x64 release. GitHub Actions builds the web UI, publishes the desktop app, packages it as a zip, and attaches the archive with generated release notes.
+
+## Contributing
+
+Issues and pull requests are welcome. Please describe the Windows version, steps to reproduce, and expected behavior when reporting a bug. Driver support and system-wide input changes are planned work; do not assume the current preview changes mouse behavior.
+
+## Credits and license
+
+ProjectAccel is an independent project and is not affiliated with any mouse-acceleration software. Interface icons use [MingCute](https://www.mingcute.com). Project source is licensed under the MIT License; see [`LICENSE`](LICENSE).
+
+---
+
+<details>
+<summary>Português</summary>
+
+O ProjectAccel é um aplicativo nativo para Windows que permite editar e visualizar curvas de resposta do mouse. A prévia atual **não altera o comportamento do cursor**; a aplicação de curvas ao mouse depende do driver, que continua em desenvolvimento.
+
+O app inclui oito modos de curva, ajuste angular de 15° para pontos da tabela, temas claro/escuro/sistema e interface em português, inglês, espanhol e russo. Consulte a aba **Releases** deste repositório para baixar as versões públicas. Para compilar, siga os comandos acima.
+
+</details>

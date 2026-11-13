@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { CurveChart } from "./CurveChart";
 import { ParamField } from "./ParamField";
 import {
@@ -14,31 +13,23 @@ const MODES = Object.keys(MODE_LABELS) as Mode[];
 
 interface EditorPageProps {
   showToast: (title: string, desc?: string) => void;
+  mode: Mode;
+  params: CurveParams;
+  onChange: (mode: Mode, params: CurveParams) => void;
+  angleSnapping: boolean;
+  onAngleSnappingChange: (enabled: boolean) => void;
+  t: (key: string) => string;
 }
 
-/** Fase 1 em prévia: editor funcional de curvas (preview), sem aplicar no driver. */
-export function EditorPage({ showToast }: EditorPageProps) {
-  const [mode, setMode] = useState<Mode>("classic");
-  const [params, setParams] = useState<CurveParams>({ ...DEFAULT_PARAMS });
-  const [pulse, setPulse] = useState(false);
-  const pulseTimer = useRef<number | null>(null);
-
-  // qualquer mudança na curva dispara um pulso sutil no card do gráfico
-  useEffect(() => {
-    setPulse(true);
-    if (pulseTimer.current) window.clearTimeout(pulseTimer.current);
-    pulseTimer.current = window.setTimeout(() => setPulse(false), 240);
-    return () => {
-      if (pulseTimer.current) window.clearTimeout(pulseTimer.current);
-    };
-  }, [mode, params]);
+/** Editor de curvas e parâmetros de resposta do cursor. */
+export function EditorPage({ showToast, mode, params, onChange, angleSnapping, onAngleSnappingChange, t }: EditorPageProps) {
 
   const set = <K extends keyof CurveParams>(key: K, value: CurveParams[K]) =>
-    setParams((p) => ({ ...p, [key]: value }));
+    onChange(mode, { ...params, [key]: value });
 
   const reset = () => {
-    setParams({ ...DEFAULT_PARAMS });
-    showToast("Parâmetros restaurados", "Voltaram os valores de fábrica para este modo.");
+    onChange(mode, { ...DEFAULT_PARAMS, lut: DEFAULT_PARAMS.lut.map((point) => ({ ...point })) });
+    showToast(t("parametersRestored"), t("defaultsApplied"));
   };
 
   return (
@@ -46,13 +37,12 @@ export function EditorPage({ showToast }: EditorPageProps) {
       {/* cabeçalho da página */}
       <div className="editor-topbar">
         <div>
-          <h1 className="editor-title">Editor de Curvas</h1>
-          <p className="editor-sub">Preview ao vivo — nada é aplicado no mouse nesta fase.</p>
+          <h1 className="editor-title">{t("curveEditor")}</h1>
+          <p className="editor-sub">{t("editorDescription")}</p>
         </div>
         <div className="editor-topbar-actions">
-          <span className="sim-badge">Simulado</span>
           <button className="button-glass button-glass--sm" onClick={reset}>
-            Restaurar padrão
+            {t("restoreDefaults")}
           </button>
         </div>
       </div>
@@ -65,18 +55,24 @@ export function EditorPage({ showToast }: EditorPageProps) {
             role="tab"
             aria-selected={m === mode}
             className={m === mode ? "mode-pill mode-pill--active" : "mode-pill"}
-            onClick={() => setMode(m)}
+            onClick={() => onChange(m, params)}
           >
-            {MODE_LABELS[m]}
+            {t(`mode:${m}`)}
           </button>
         ))}
       </div>
 
       <div className="editor-body">
         {/* gráfico + leituras */}
-        <div className={pulse ? "chart-card chart-card--pulse" : "chart-card"}>
-          <CurveChart mode={mode} params={params} />
-          <div className="readout-row" aria-label="Sensibilidade por velocidade">
+        <div className="chart-card">
+          <div className="chart-heading">
+            <div>
+              <h2 className="chart-title">{t("multiplierBySpeed")}</h2>
+            </div>
+            <button className={angleSnapping ? "angle-snap angle-snap--active" : "angle-snap"} type="button" aria-pressed={angleSnapping} title={t("angleSnappingHint")} onClick={() => { if (mode !== "lut") onChange("lut", params); onAngleSnappingChange(!angleSnapping); }}>{t("angleSnapping")}</button>
+          </div>
+          <CurveChart mode={mode} params={params} angleSnapping={angleSnapping} onLutChange={(lut) => set("lut", lut)} sensitivityLabel={`${t("sensitivity")} (×)`} />
+          <div className="readout-row" aria-label={t("sensitivity")}>
             {READOUT_SPEEDS.map((v) => (
               <div key={v} className="readout">
                 <span className="readout-speed">{v}</span>
@@ -88,79 +84,72 @@ export function EditorPage({ showToast }: EditorPageProps) {
 
         {/* parâmetros */}
         <aside className="params-panel" aria-label="Parâmetros">
-          <span className="params-kicker">Sensibilidade global</span>
-          <ParamField label="Multiplicador" value={params.sensitivity} min={0.2} max={3} step={0.05}
+          <ParamField label={t("multiplier")} value={params.sensitivity} min={0.2} max={3} step={0.05}
             onChange={(v) => set("sensitivity", v)} />
-          <ParamField label="Y/X ratio" value={params.yxRatio} min={0.5} max={2} step={0.05}
+          <ParamField label={t("yxRatio")} value={params.yxRatio} min={0.5} max={2} step={0.05}
             onChange={(v) => set("yxRatio", v)} />
 
           {(mode === "linear" || mode === "classic") && (
             <>
-              <span className="params-kicker">Curva</span>
-              <ParamField label="Aceleração" value={params.acceleration} min={0.001} max={0.05} step={0.001}
+              <ParamField label={t("acceleration")} value={params.acceleration} min={0.001} max={0.05} step={0.001}
                 onChange={(v) => set("acceleration", v)} />
               {mode === "classic" && (
-                <ParamField label="Expoente" value={params.exponent} min={1} max={4} step={0.25}
+                <ParamField label={t("exponent")} value={params.exponent} min={1} max={4} step={0.25}
                   onChange={(v) => set("exponent", v)} />
               )}
-              <ParamField label="Offset de entrada" value={params.inputOffset} min={0} max={20} step={0.5}
+              <ParamField label={t("inputOffset")} value={params.inputOffset} min={0} max={20} step={0.5}
                 onChange={(v) => set("inputOffset", v)} />
-              <ParamField label="Teto de ganho" value={params.gainCap} min={0.5} max={6} step={0.25}
+              <ParamField label={t("gainCap")} value={params.gainCap} min={0.5} max={6} step={0.25}
                 onChange={(v) => set("gainCap", v)} />
             </>
           )}
 
           {mode === "natural" && (
             <>
-              <span className="params-kicker">Curva</span>
-              <ParamField label="Decaimento" value={params.decay} min={0.01} max={0.3} step={0.01}
+              <ParamField label={t("decay")} value={params.decay} min={0.01} max={0.3} step={0.01}
                 onChange={(v) => set("decay", v)} />
-              <ParamField label="Limite" value={params.limit} min={1.1} max={3} step={0.1}
+              <ParamField label={t("limit")} value={params.limit} min={1.1} max={3} step={0.1}
                 onChange={(v) => set("limit", v)} />
-              <ParamField label="Offset de entrada" value={params.inputOffset} min={0} max={20} step={0.5}
+              <ParamField label={t("inputOffset")} value={params.inputOffset} min={0} max={20} step={0.5}
                 onChange={(v) => set("inputOffset", v)} />
             </>
           )}
 
           {mode === "synchronous" && (
             <>
-              <span className="params-kicker">Curva</span>
-              <ParamField label="Motivity" value={params.motivity} min={1.05} max={3} step={0.05}
+              <ParamField label={t("motivity")} value={params.motivity} min={1.05} max={3} step={0.05}
                 onChange={(v) => set("motivity", v)} />
-              <ParamField label="Gamma" value={params.gamma} min={0.2} max={3} step={0.1}
+              <ParamField label={t("gamma")} value={params.gamma} min={0.2} max={3} step={0.1}
                 onChange={(v) => set("gamma", v)} />
-              <ParamField label="Velocidade síncrona" value={params.syncSpeed} min={0.5} max={20} step={0.5}
+              <ParamField label={t("syncSpeed")} value={params.syncSpeed} min={0.5} max={20} step={0.5}
                 onChange={(v) => set("syncSpeed", v)} />
             </>
           )}
 
           {mode === "power" && (
             <>
-              <span className="params-kicker">Curva</span>
-              <ParamField label="Scale" value={params.scale} min={0.2} max={3} step={0.1}
+              <ParamField label={t("scale")} value={params.scale} min={0.2} max={3} step={0.1}
                 onChange={(v) => set("scale", v)} />
-              <ParamField label="Expoente" value={params.exponentPower} min={0.01} max={1} step={0.01}
+              <ParamField label={t("exponent")} value={params.exponentPower} min={0.01} max={1} step={0.01}
                 onChange={(v) => set("exponentPower", v)} />
-              <ParamField label="Offset de saída" value={params.outputOffset} min={0} max={1} step={0.05}
+              <ParamField label={t("outputOffset")} value={params.outputOffset} min={0} max={1} step={0.05}
                 onChange={(v) => set("outputOffset", v)} />
             </>
           )}
 
           {mode === "jump" && (
             <>
-              <span className="params-kicker">Curva</span>
-              <ParamField label="Ponto do salto" value={params.jumpPoint} min={3} max={30} step={0.5}
+              <ParamField label={t("jumpPoint")} value={params.jumpPoint} min={3} max={30} step={0.5}
                 onChange={(v) => set("jumpPoint", v)} />
-              <ParamField label="Multiplicador" value={params.jumpMultiplier} min={1.1} max={3} step={0.05}
+              <ParamField label={t("jumpMultiplier")} value={params.jumpMultiplier} min={1.1} max={3} step={0.05}
                 onChange={(v) => set("jumpMultiplier", v)} />
-              <ParamField label="Suavização" value={params.jumpSmooth} min={0} max={1} step={0.05}
+              <ParamField label={t("smoothing")} value={params.jumpSmooth} min={0} max={1} step={0.05}
                 onChange={(v) => set("jumpSmooth", v)} />
             </>
           )}
 
           {mode === "lut" && (
             <>
-              <span className="params-kicker">Pontos da tabela</span>
               <div className="lut-table">
                 {params.lut.map((pt, i) => (
                   <div key={i} className="lut-row">
@@ -193,7 +182,7 @@ export function EditorPage({ showToast }: EditorPageProps) {
 
           {mode === "off" && (
             <p className="params-empty">
-              Modo desligado — sensibilidade constante (1.0×) em qualquer velocidade.
+              {t("disabledMode")}
             </p>
           )}
         </aside>
