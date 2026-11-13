@@ -27,3 +27,7 @@ packaging/out/
 # OS
 Thumbs.db
 .DS_Store
+window-check.png
+app-err.txt
+app-out.txt
+*.log

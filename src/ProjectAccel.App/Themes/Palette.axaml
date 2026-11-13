@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ProjectAccel palette — graphite / ember / cyan -->
+  <SolidColorBrush x:Key="AppBackground" Color="#10161F"/>
+  <SolidColorBrush x:Key="PanelBackground" Color="#141C27"/>
+  <SolidColorBrush x:Key="CardBackground" Color="#171F2A"/>
+  <SolidColorBrush x:Key="CardStroke" Color="#232E3D"/>
+  <SolidColorBrush x:Key="SidebarStroke" Color="#1E2836"/>
+
+  <SolidColorBrush x:Key="TextPrimary" Color="#E8EDF4"/>
+  <SolidColorBrush x:Key="TextSecondary" Color="#A9B4C6"/>
+  <SolidColorBrush x:Key="TextMuted" Color="#8E99AB"/>
+  <SolidColorBrush x:Key="TextFaint" Color="#566174"/>
+
+  <SolidColorBrush x:Key="AccentAmber" Color="#FFB03A"/>
+  <SolidColorBrush x:Key="AccentEmber" Color="#FF6A3A"/>
+  <SolidColorBrush x:Key="AccentEmberDeep" Color="#FF3D2E"/>
+  <SolidColorBrush x:Key="AccentEmberText" Color="#17100B"/>
+  <SolidColorBrush x:Key="AccentCyan" Color="#35E0FF"/>
+  <SolidColorBrush x:Key="AccentCyanDim" Color="#123642"/>
+
+  <SolidColorBrush x:Key="NavItemHover" Color="#1A2431"/>
+  <SolidColorBrush x:Key="NavItemActive" Color="#1C2733"/>
+</ResourceDictionary>

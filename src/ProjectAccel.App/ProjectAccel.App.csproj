@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\projectaccel.ico</ApplicationIcon>
+
+    <AssemblyName>ProjectAccel</AssemblyName>
+    <RootNamespace>ProjectAccel.App</RootNamespace>
+    <Version>0.1.0</Version>
+    <InformationalVersion>0.1.0-dev</InformationalVersion>
+    <Product>ProjectAccel</Product>
+    <Company>ProjectAccel</Company>
+    <Description>Mouse acceleration, reimagined. Desktop app (Avalonia) for mouse acceleration at the driver level.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.6" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProjectAccel.Core\ProjectAccel.Core.csproj" />
+    <ProjectReference Include="..\ProjectAccel.Backend\ProjectAccel.Backend.csproj" />
+  </ItemGroup>
+</Project>
