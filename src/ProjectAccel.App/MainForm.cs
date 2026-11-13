@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
@@ -8,25 +10,31 @@ using ProjectAccel.Core;
 namespace ProjectAccel.App;
 
 /// <summary>
-/// Janela principal: um WebView2 preenchendo a área útil, servindo o build do
-/// React (pasta wwwroot, mapeada via protocolo virtual — sem servidor HTTP) e
-/// respondendo às mensagens do bridge <c>chrome.webview.postMessage</c>.
-/// O driver nunca é acessado pelo React diretamente; tudo passa por aqui.
+/// Janela principal do ProjectAccel: sem chrome do Windows
+/// (FormBorderStyle.None), cantos arredondados de 20px desenhados pela própria
+/// região da janela, área de resize própria na borda, e os botões de
+/// minimizar/maximizar/fechar do app (via bridge) no lugar dos nativos.
+/// A UI (React no WebView2) é servida de wwwroot via virtual host.
 /// </summary>
 public sealed class MainForm : Form
 {
+    private const int CornerRadius = 20;
+    private const int ResizeBorder = 7;
+
+    private const int WM_NCHITTEST = 0x0084;
+    private const int WM_SIZE = 0x0005;
+    private const int WM_NCLBUTTONDOWN = 0x00A1;
+    private const int HTCLIENT = 1;
+    private const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12;
+    private const int HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+    private const int HTCAPTION = 2;
+    private const int SIZE_MAXIMIZED = 2, SIZE_RESTORED = 0;
+
+    [DllImport("user32.dll")] private static extern bool ReleaseCapture();
+    [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
     private readonly WebView2 _webview = new() { Dock = DockStyle.Fill };
-
-    // Caption bar dark nos Windows 10 1809+/11 (DWMWA_USE_IMMERSIVE_DARK_MODE)
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
-
-    protected override void OnHandleCreated(EventArgs e)
-    {
-        base.OnHandleCreated(e);
-        int useDark = 1;
-        DwmSetWindowAttribute(Handle, 20, ref useDark, sizeof(int));
-    }
+    private FormWindowState _lastState = FormWindowState.Normal;
 
     public MainForm()
     {
@@ -35,19 +43,86 @@ public sealed class MainForm : Form
         {
             Icon = new Icon(Path.Combine(AppContext.BaseDirectory, "Assets", "projectaccel.ico"));
         }
-        catch (Exception)
-        {
-            // ícone é cosmético — não impede a janela de abrir
-        }
+        catch (Exception) { }
 
+        FormBorderStyle = FormBorderStyle.None;          // sem caption/bordas nativas
+        DoubleBuffered = true;
         ClientSize = new Size(1180, 720);
         MinimumSize = new Size(1000, 640);
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.FromArgb(0x10, 0x16, 0x1F);
+        BackColor = Color.FromArgb(0x0D, 0x12, 0x19);    // canto externo da região
 
         Controls.Add(_webview);
-        Load += async (_, _) => await InitWebViewAsync();
+        Load += async (_, _) =>
+        {
+            ApplyRoundedRegion();
+            await InitWebViewAsync();
+        };
     }
+
+    // ───────────────────────── cantos arredondados (região) ─────────────────────────
+
+    private void ApplyRoundedRegion()
+    {
+        var old = Region;
+        if (WindowState == FormWindowState.Maximized)
+        {
+            Region = null; // tela cheia: quadrada
+        }
+        else
+        {
+            int d = CornerRadius * 2;
+            using var path = new GraphicsPath();
+            path.AddArc(0, 0, d, d, 180, 90);
+            path.AddArc(Width - d, 0, d, d, 270, 90);
+            path.AddArc(Width - d, Height - d, d, d, 0, 90);
+            path.AddArc(0, Height - d, d, d, 90, 90);
+            path.CloseFigure();
+            Region = new Region(path);
+        }
+        old?.Dispose();
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        if (m.Msg == WM_SIZE)
+        {
+            base.WndProc(ref m);
+            ApplyRoundedRegion();
+            if (_lastState != WindowState)
+            {
+                _lastState = WindowState;
+                _ = PostStateAsync();
+            }
+            return;
+        }
+
+        if (m.Msg == WM_NCHITTEST && WindowState != FormWindowState.Maximized)
+        {
+            base.WndProc(ref m);
+            if (m.Result == (IntPtr)HTCLIENT)
+            {
+                var p = PointToClient(Cursor.Position);
+                int w = ClientSize.Width, h = ClientSize.Height;
+                bool left = p.X <= ResizeBorder, right = p.X >= w - ResizeBorder;
+                bool top = p.Y <= ResizeBorder, bottom = p.Y >= h - ResizeBorder;
+
+                if (top && left) m.Result = (IntPtr)HTTOPLEFT;
+                else if (top && right) m.Result = (IntPtr)HTTOPRIGHT;
+                else if (bottom && left) m.Result = (IntPtr)HTBOTTOMLEFT;
+                else if (bottom && right) m.Result = (IntPtr)HTBOTTOMRIGHT;
+                else if (left) m.Result = (IntPtr)HTLEFT;
+                else if (right) m.Result = (IntPtr)HTRIGHT;
+                else if (top) m.Result = (IntPtr)HTTOP;
+                else if (bottom) m.Result = (IntPtr)HTBOTTOM;
+            }
+            return;
+        }
+
+        base.WndProc(ref m);
+    }
+
+    // ───────────────────────── WebView2 ─────────────────────────
 
     private async Task InitWebViewAsync()
     {
@@ -60,7 +135,6 @@ public sealed class MainForm : Form
 
         try
         {
-            // Pasta de dados por-usuário (Program Files pode ser somente-leitura)
             var userData = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 ProductInfo.Name, "WebView2");
@@ -75,7 +149,6 @@ public sealed class MainForm : Form
             core.WebMessageReceived += OnWebMessageReceived;
             core.NavigationCompleted += (_, _) => _ = PostStateAsync();
 
-            // UI enxuta: sem menu de contexto e sem devtools fora do Debug
             core.Settings.AreDefaultContextMenusEnabled = false;
 #if !DEBUG
             core.Settings.AreDevToolsEnabled = false;
@@ -138,6 +211,34 @@ public sealed class MainForm : Form
                     Reply(id, ok, payload, error);
                     break;
 
+                case "windowGetState":
+                    Reply(id, ok: true, payload: new { maximized = WindowState == FormWindowState.Maximized });
+                    break;
+
+                case "windowMinimize":
+                    WindowState = FormWindowState.Minimized;
+                    Reply(id, ok: true);
+                    break;
+
+                case "windowToggleMaximize":
+                    WindowState = WindowState == FormWindowState.Maximized
+                        ? FormWindowState.Normal
+                        : FormWindowState.Maximized; // WM_SIZE cuida da região e do push
+                    Reply(id, ok: true, payload: new { maximized = WindowState == FormWindowState.Maximized });
+                    break;
+
+                case "windowClose":
+                    Reply(id, ok: true);
+                    Close();
+                    break;
+
+                case "windowDrag":
+                    // padrão clássico: finge caption-drag para o Windows assumir o movimento
+                    ReleaseCapture();
+                    SendMessage(Handle, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
+                    Reply(id, ok: true);
+                    break;
+
                 default:
                     Reply(id, ok: false, error: $"unknown message type: {type}");
                     break;
@@ -153,7 +254,6 @@ public sealed class MainForm : Form
     {
         try
         {
-            // Docs vivem no repositório, não ao lado do binário — sobe a árvore a partir do CWD.
             foreach (var start in new[] { Environment.CurrentDirectory, AppContext.BaseDirectory })
             {
                 var dir = new DirectoryInfo(start);
@@ -183,10 +283,7 @@ public sealed class MainForm : Form
         {
             _webview.CoreWebView2?.PostWebMessageAsJson(json);
         }
-        catch (Exception)
-        {
-            // WebView2 pode estar morto — o bridge nunca derruba o host.
-        }
+        catch (Exception) { }
     }
 
     private async Task PostStateAsync()
@@ -201,6 +298,7 @@ public sealed class MainForm : Form
                 version = ProductInfo.Version,
                 backend = "Simulated",   // Fase 2 assume o ProjectAccelBackend
                 driver = (string?)null,  // sem driver instalado ainda
+                maximized = WindowState == FormWindowState.Maximized,
             },
             error = (string?)null,
         });
@@ -209,9 +307,6 @@ public sealed class MainForm : Form
             await Task.Delay(50); // deixa a página montar antes de receber o push
             _webview.CoreWebView2?.PostWebMessageAsJson(json);
         }
-        catch (Exception)
-        {
-            // best-effort: a página também pode pedir tudo via ping/getProductInfo
-        }
+        catch (Exception) { }
     }
 }

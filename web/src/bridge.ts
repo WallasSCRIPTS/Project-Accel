@@ -80,12 +80,12 @@ export function send<T>(type: string, timeoutMs = 3000): Promise<T> {
   });
 }
 
-/** Escuta pushes do host (estado do backend). */
-export function onPush(handler: (state: BackendState) => void): void {
+/** Escuta pushes do host (id === 0). T é o payload completo do push. */
+export function onPush<T>(handler: (state: T) => void): void {
   hostWebView()?.addEventListener("message", (event) => {
     const data = event.data;
     if (isBridgeResponse(data) && data.id === 0 && data.ok && data.payload) {
-      handler(data.payload as BackendState);
+      handler(data.payload as T);
     }
   });
 }
