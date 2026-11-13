@@ -2,7 +2,7 @@
   <img src="assets/logo/projectaccel-badge.png" alt="ProjectAccel" width="112" />
   <h1>ProjectAccel</h1>
   <p><strong>Mouse acceleration, reimagined.</strong></p>
-  <p>A clean, native Windows workspace for shaping and previewing mouse response curves.</p>
+  <p>Project Accel for competitive players: a native Windows workspace for shaping and previewing mouse response curves.</p>
   <p>
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-111111?style=flat-square">
     <img alt="License" src="https://img.shields.io/badge/license-MIT-111111?style=flat-square">
