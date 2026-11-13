@@ -53,6 +53,11 @@ public sealed class MainForm : Form
         BackColor = Color.FromArgb(0x0D, 0x12, 0x19);    // canto externo da região
 
         Controls.Add(_webview);
+        // dev: PROJECTACCEL_MAXIMIZED=1 abre a janela já maximizada (útil para screenshots)
+        if (Environment.GetEnvironmentVariable("PROJECTACCEL_MAXIMIZED") == "1")
+        {
+            WindowState = FormWindowState.Maximized;
+        }
         Load += async (_, _) =>
         {
             ApplyRoundedRegion();

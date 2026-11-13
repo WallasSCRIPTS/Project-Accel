@@ -100,10 +100,8 @@ export default function App() {
 
   return (
     <div className={closing ? "app app--closing" : "app"}>
-      <TitleBar onCloseRequest={requestClose} />
-
       <div className={["app-body", collapsed && "app-body--collapsed", windowPulse && "app-body--pulse"].filter(Boolean).join(" ")}>
-        {/* ══════════ SIDEBAR ══════════ */}
+        {/* ══════════ SIDEBAR (topo ao fim da janela) ══════════ */}
         <aside className="sidebar" aria-label="Barra lateral">
           <div className="brand-row">
             <div className="brand">
@@ -165,10 +163,13 @@ export default function App() {
           </div>
         </aside>
 
-        {/* ══════════ CONTEÚDO ══════════ */}
-        <main className="content">
-          <EditorPage showToast={showToast} />
-        </main>
+        {/* ══════════ COLUNA DA DIREITA: titlebar + conteúdo ══════════ */}
+        <div className="main-col">
+          <TitleBar onCloseRequest={requestClose} />
+          <main className="content">
+            <EditorPage showToast={showToast} />
+          </main>
+        </div>
       </div>
 
       {/* toast */}
