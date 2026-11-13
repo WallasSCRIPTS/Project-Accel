@@ -22,7 +22,7 @@ export default function App() {
   const [info, setInfo] = useState<{ product: string; version: string } | null>(null);
   const [toast, setToast] = useState<{ title: string; desc?: string } | null>(null);
   const [toastLeaving, setToastLeaving] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("pa-sidebar") === "1");
+  const [collapsed, setCollapsed] = useState(() => true);
   const [closing, setClosing] = useState(false);
   const [windowPulse, setWindowPulse] = useState(false);
   const prevMaximized = useRef<boolean | null>(null);

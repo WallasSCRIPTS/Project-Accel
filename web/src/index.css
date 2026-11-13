@@ -1,7 +1,7 @@
-/* ───────────────────────── ProjectAccel · design system ─────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ProjectAccel Â· design system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Vidro, glows de fundo, tipografia grande, movimento calmo.
-   Sem bordas/linhas: superfícies se definem por preenchimento.
-   Tudo escala com a janela via clamp()+vw — maximizar = UI maior.                  */
+   Sem bordas/linhas: superfÃ­cies se definem por preenchimento.
+   Tudo escala com a janela via clamp()+vw â€” maximizar = UI maior.                  */
 
 :root {
   --bg: #0d1219;
@@ -49,7 +49,7 @@ body {
 
 :focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; border-radius: var(--r-control); }
 
-/* ══════════ RIPPLE (delegado via JS) ══════════ */
+/* â•â•â•â•â•â•â•â•â•â• RIPPLE (delegado via JS) â•â•â•â•â•â•â•â•â•â• */
 .ripple {
   position: absolute;
   border-radius: 50%;
@@ -64,7 +64,7 @@ body {
   to { transform: scale(1); opacity: 0; }
 }
 
-/* ══════════ JANELA: 20px de raio, sem bordas ══════════ */
+/* â•â•â•â•â•â•â•â•â•â• JANELA: 20px de raio, sem bordas â•â•â•â•â•â•â•â•â•â• */
 .app {
   display: grid;
   grid-template-rows: 1fr;
@@ -102,7 +102,7 @@ body {
 }
 .main-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 
-/* ══════════ TITLEBAR PRÓPRIA ══════════ */
+/* â•â•â•â•â•â•â•â•â•â• TITLEBAR PRÃ“PRIA â•â•â•â•â•â•â•â•â•â• */
 .titlebar {
   display: flex;
   align-items: center;
@@ -167,7 +167,7 @@ body {
 }
 .title-btn:hover::after, .collapse-btn:hover::after { opacity: 1; transform: none; }
 
-/* ══════════ SIDEBAR — topo ao fim, transparente (sem cor a parte) ══════════ */
+/* â•â•â•â•â•â•â•â•â•â• SIDEBAR â€” topo ao fim, transparente (sem cor a parte) â•â•â•â•â•â•â•â•â•â• */
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -330,22 +330,22 @@ body {
 .sidebar-footer { padding: 8px 10px 2px; white-space: nowrap; flex: none; transition: opacity 220ms var(--ease); }
 .sidebar-footnote { font-size: clamp(10px, 0.8vw, 11px); color: var(--text-tertiary); }
 
-/* ─── sidebar recolhida: ícones organizados em trilho ─── */
+/* â”€â”€â”€ sidebar recolhida: trilho 100% centralizado â”€â”€â”€ */
 .app-body--collapsed .sidebar { padding: clamp(10px, 1vw, 14px) 8px; gap: clamp(8px, 0.8vw, 12px); align-items: center; }
-.app-body--collapsed .brand-row { flex-direction: column; justify-content: center; gap: 4px; padding: 0; }
-.app-body--collapsed .brand { gap: 0; }
-.app-body--collapsed .brand-text { opacity: 0; max-width: 0; pointer-events: none; }
-.app-body--collapsed .collapse-btn { transform: none; }
-.app-body--collapsed .search { width: clamp(38px, 3vw, 42px); padding: 0; justify-content: center; align-self: center; }
-.app-body--collapsed .search span, .app-body--collapsed .search kbd { opacity: 0; width: 0; margin: 0; pointer-events: none; }
-.app-body--collapsed .nav { align-items: center; justify-content: center; gap: clamp(6px, 0.5vw, 9px); }
+.app-body--collapsed .brand-row { flex-direction: column; justify-content: center; align-items: center; gap: 4px; padding: 0; width: 100%; }
+.app-body--collapsed .brand { gap: 0; margin: 0 auto; }
+.app-body--collapsed .brand-text { display: none; }
+.app-body--collapsed .collapse-btn { transform: none; margin: 0 auto; }
+.app-body--collapsed .search { width: clamp(38px, 3vw, 42px); padding: 0; gap: 0; justify-content: center; align-self: center; margin: 0 auto; }
+.app-body--collapsed .search span, .app-body--collapsed .search kbd { display: none; }
+.app-body--collapsed .nav { align-items: center; justify-content: flex-start; gap: clamp(6px, 0.5vw, 9px); width: 100%; }
 .app-body--collapsed .nav-kicker { opacity: 0; max-height: 0; margin: 0; pointer-events: none; }
-.app-body--collapsed .nav-item { justify-content: center; width: clamp(38px, 3vw, 44px); height: clamp(38px, 3vw, 44px); padding: 0; }
-.app-body--collapsed .nav-label { opacity: 0; width: 0; transform: translateX(-6px); pointer-events: none; }
-.app-body--collapsed .nav-soon { opacity: 0; width: 0; margin: 0; padding: 0; pointer-events: none; }
-.app-body--collapsed .sidebar-footer { opacity: 0; width: 0; padding: 0; pointer-events: none; }
+.app-body--collapsed .nav-item { justify-content: center; gap: 0; width: clamp(38px, 3vw, 44px); height: clamp(38px, 3vw, 44px); padding: 0; margin: 0 auto; }
+.app-body--collapsed .nav-label { display: none; }
+.app-body--collapsed .nav-soon { display: none; }
+.app-body--collapsed .sidebar-footer { display: none; }
 
-/* ══════════ CONTEÚDO / EDITOR ══════════ */
+/* â•â•â•â•â•â•â•â•â•â• CONTEÃšDO / EDITOR â•â•â•â•â•â•â•â•â•â• */
 .content { overflow-y: auto; min-width: 0; }
 
 .editor {
@@ -441,7 +441,7 @@ body {
 .mode-pill:active { transform: scale(0.93); }
 .mode-pill--active { background: var(--fill-strong); color: var(--amber); }
 
-/* corpo do editor: gráfico 1fr · parâmetros 23.5vw→380px */
+/* corpo do editor: grÃ¡fico 1fr Â· parÃ¢metros 23.5vwâ†’380px */
 .editor-body { display: grid; grid-template-columns: 1fr clamp(260px, 23vw, 384px); gap: clamp(12px, 1.2vw, 20px); align-items: start; }
 
 .chart-card {
@@ -483,7 +483,7 @@ body {
 .readout-speed { font-size: clamp(8.5px, 0.72vw, 10px); color: var(--text-tertiary); font-weight: 600; }
 .readout-value { font-size: clamp(11px, 0.9vw, 13px); color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* painel de parâmetros */
+/* painel de parÃ¢metros */
 .params-panel {
   background: var(--fill-subtle);
   border-radius: var(--r-panel);
@@ -567,7 +567,7 @@ body {
 
 .params-empty { font-size: clamp(11px, 0.9vw, 12.5px); color: var(--text-secondary); line-height: 1.6; padding: 4px 2px 0; }
 
-/* ══════════ TOAST ══════════ */
+/* â•â•â•â•â•â•â•â•â•â• TOAST â•â•â•â•â•â•â•â•â•â• */
 .toast {
   position: fixed;
   right: 16px;
@@ -599,3 +599,4 @@ body {
 .toast-body { display: flex; flex-direction: column; gap: 2px; }
 .toast-title { font-size: 13px; font-weight: 600; color: var(--text); }
 .toast-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
+
