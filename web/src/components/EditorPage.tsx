@@ -18,11 +18,13 @@ interface EditorPageProps {
   onChange: (mode: Mode, params: CurveParams) => void;
   angleSnapping: boolean;
   onAngleSnappingChange: (enabled: boolean) => void;
+  angleSnapStrength: number;
+  onAngleSnapStrengthChange: (strength: number) => void;
   t: (key: string) => string;
 }
 
 /** Editor de curvas e parâmetros de resposta do cursor. */
-export function EditorPage({ showToast, mode, params, onChange, angleSnapping, onAngleSnappingChange, t }: EditorPageProps) {
+export function EditorPage({ showToast, mode, params, onChange, angleSnapping, onAngleSnappingChange, angleSnapStrength, onAngleSnapStrengthChange, t }: EditorPageProps) {
 
   const set = <K extends keyof CurveParams>(key: K, value: CurveParams[K]) =>
     onChange(mode, { ...params, [key]: value });
@@ -71,7 +73,7 @@ export function EditorPage({ showToast, mode, params, onChange, angleSnapping, o
             </div>
             <button className={angleSnapping ? "angle-snap angle-snap--active" : "angle-snap"} type="button" aria-pressed={angleSnapping} title={t("angleSnappingHint")} onClick={() => { if (mode !== "lut") onChange("lut", params); onAngleSnappingChange(!angleSnapping); }}>{t("angleSnapping")}</button>
           </div>
-          <CurveChart mode={mode} params={params} angleSnapping={angleSnapping} onLutChange={(lut) => set("lut", lut)} sensitivityLabel={`${t("sensitivity")} (×)`} />
+          <CurveChart mode={mode} params={params} angleSnapping={angleSnapping} angleSnapStrength={angleSnapStrength} onLutChange={(lut) => set("lut", lut)} sensitivityLabel={`${t("sensitivity")} (×)`} />
           <div className="readout-row" aria-label={t("sensitivity")}>
             {READOUT_SPEEDS.map((v) => (
               <div key={v} className="readout">
@@ -88,6 +90,8 @@ export function EditorPage({ showToast, mode, params, onChange, angleSnapping, o
             onChange={(v) => set("sensitivity", v)} />
           <ParamField label={t("yxRatio")} value={params.yxRatio} min={0.5} max={2} step={0.05}
             onChange={(v) => set("yxRatio", v)} />
+          {angleSnapping && <ParamField label={t("angleSnapStrength")} value={angleSnapStrength} min={1} max={10} step={1}
+            onChange={onAngleSnapStrengthChange} />}
 
           {(mode === "linear" || mode === "classic") && (
             <>

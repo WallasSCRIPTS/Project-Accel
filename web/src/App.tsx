@@ -41,6 +41,7 @@ export default function App() {
   const [mode, setMode] = useState<Mode>(() => (localStorage.getItem("pa-curve-mode") as Mode | null) ?? legacyProfile()?.mode ?? "classic");
   const [params, setParams] = useState<CurveParams>(loadParams);
   const [angleSnapping, setAngleSnapping] = useState(() => localStorage.getItem("pa-angle-snapping") === "1");
+  const [angleSnapStrength, setAngleSnapStrength] = useState(() => Math.min(10, Math.max(1, Number(localStorage.getItem("pa-angle-snap-strength") ?? 1))));
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem("pa-language") as Language | null) ?? "pt");
   const [theme, setTheme] = useState<ThemePreference>(() => (localStorage.getItem("pa-theme") as ThemePreference | null) ?? "system");
   const [reducedMotion, setReducedMotion] = useState(() => localStorage.getItem("pa-reduced-motion") === "1");
@@ -78,6 +79,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem("pa-curve-mode", mode); }, [mode]);
   useEffect(() => { localStorage.removeItem("pa-profiles"); localStorage.removeItem("pa-active-profile"); }, []);
   useEffect(() => { localStorage.setItem("pa-angle-snapping", angleSnapping ? "1" : "0"); }, [angleSnapping]);
+  useEffect(() => { localStorage.setItem("pa-angle-snap-strength", String(angleSnapStrength)); }, [angleSnapStrength]);
   useEffect(() => { localStorage.setItem("pa-language", language); }, [language]);
   useEffect(() => { document.documentElement.dataset.reducedMotion = reducedMotion ? "true" : "false"; }, [reducedMotion]);
   useEffect(() => {
@@ -136,7 +138,7 @@ export default function App() {
         <div className="main-col">
           <TitleBar onCloseRequest={requestClose} />
           <main className="content">
-            {page === "editor" && <EditorPage mode={mode} params={params} onChange={setCurve} angleSnapping={angleSnapping} onAngleSnappingChange={setAngleSnapping} showToast={showToast} t={t} />}
+            {page === "editor" && <EditorPage mode={mode} params={params} onChange={setCurve} angleSnapping={angleSnapping} onAngleSnappingChange={setAngleSnapping} angleSnapStrength={angleSnapStrength} onAngleSnapStrengthChange={setAngleSnapStrength} showToast={showToast} t={t} />}
             {page === "devices" && <DevicesPage t={t} />}
             {page === "settings" && <SettingsPage version={info?.version ?? "0.1.0-dev"} collapsed={collapsed} onCollapsedChange={setCollapsed} language={language} onLanguageChange={setLanguage} theme={theme} onThemeChange={setTheme} reducedMotion={reducedMotion} onReducedMotionChange={setReducedMotion} t={t} />}
           </main>

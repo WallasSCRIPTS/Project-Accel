@@ -4,6 +4,7 @@ interface CurveChartProps {
   mode: Mode;
   params: CurveParams;
   angleSnapping: boolean;
+  angleSnapStrength: number;
   onLutChange: (points: CurveParams["lut"]) => void;
   sensitivityLabel: string;
 }
@@ -15,7 +16,7 @@ const PAD = { l: 44, r: 18, t: 16, b: 30 };
 const xFor = (v: number) => PAD.l + (v / MAX_SPEED) * (W - PAD.l - PAD.r);
 
 /** SVG puro: grade, eixo base 1.0, curva de sensibilidade e área sob a curva. */
-export function CurveChart({ mode, params, angleSnapping, onLutChange, sensitivityLabel }: CurveChartProps) {
+export function CurveChart({ mode, params, angleSnapping, angleSnapStrength, onLutChange, sensitivityLabel }: CurveChartProps) {
   const series = buildSeries(mode, params);
   const dataMax = Math.max(...series);
   const yMax = Math.min(8, Math.max(2, Math.ceil(dataMax * 2) / 2));
@@ -53,7 +54,9 @@ export function CurveChart({ mode, params, angleSnapping, onLutChange, sensitivi
         const dxPixels = ((x - previous.x) / MAX_SPEED) * (W - PAD.l - PAD.r);
         if (dxPixels > 0) {
           const currentAngle = Math.atan2(-(y - previous.y) * ((H - PAD.t - PAD.b) / yMax * params.sensitivity), dxPixels) * 180 / Math.PI;
-          const snappedAngle = Math.max(-75, Math.min(75, Math.round(currentAngle / 15) * 15));
+          const targetAngle = Math.max(-75, Math.min(75, Math.round(currentAngle / 15) * 15));
+          const strength = Math.min(10, Math.max(1, angleSnapStrength)) / 10;
+          const snappedAngle = currentAngle + (targetAngle - currentAngle) * strength;
           const slope = Math.tan(snappedAngle * Math.PI / 180);
           const yDelta = slope * dxPixels / ((H - PAD.t - PAD.b) / yMax * params.sensitivity);
           y = Math.max(0.1, Math.min(5, Math.round((previous.y - yDelta) * 20) / 20));
