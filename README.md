@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo/projectaccel-badge.png" alt="ProjectAccel" width="112" />
+  <img src="assets/logo/projectaccel-readme.png" alt="ProjectAccel" width="300" />
   <h1>ProjectAccel</h1>
   <p><strong>Mouse acceleration, reimagined.</strong></p>
   <p>Project Accel for competitive players: a native Windows workspace for shaping and previewing mouse response curves.</p>
