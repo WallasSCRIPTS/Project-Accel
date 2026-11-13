@@ -39,16 +39,18 @@ function TitleButton({ label, kind, onClick, maximized }: TitleButtonProps) {
   );
 }
 
-/** Barra de título própria: sem chrome do Windows, drag nativo via bridge. */
-export function TitleBar() {
+interface TitleBarProps {
+  onCloseRequest: () => void;
+}
+
+/** Barra de título própria: sem chrome do Windows; nome do app removido (sidebar já o carrega). */
+export function TitleBar({ onCloseRequest }: TitleBarProps) {
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
-    // estado inicial via bridge
     send<{ maximized: boolean }>("windowGetState")
       .then((s) => setMaximized(Boolean(s?.maximized)))
       .catch(() => {});
-    // push espontâneo do host quando maximiza/restaura (também via atalho do Windows)
     onPush<{ maximized?: boolean }>((p) => {
       if (typeof p?.maximized === "boolean") setMaximized(p.maximized);
     });
@@ -59,7 +61,6 @@ export function TitleBar() {
     setMaximized((m) => !m);
     send("windowToggleMaximize").catch(() => setMaximized((m) => !m));
   };
-  const close = () => send("windowClose").catch(() => window.close());
 
   // drag: só em elementos com data-drag (nunca nos botões)
   const onDragStart = (e: React.MouseEvent) => {
@@ -70,13 +71,12 @@ export function TitleBar() {
 
   return (
     <header className="titlebar" onMouseDown={onDragStart} onDoubleClick={toggleMax}>
-      <img className="titlebar-logo" src="./logo.png" alt="" width={17} height={17} draggable={false} />
-      <span className="titlebar-name">ProjectAccel</span>
+      <img className="titlebar-logo" src="./logo.png" alt="ProjectAccel" width={17} height={17} draggable={false} />
       <span className="titlebar-spacer" data-drag />
       <div className="title-actions">
         <TitleButton label="Minimizar" kind="min" onClick={minimize} />
         <TitleButton label={maximized ? "Restaurar" : "Maximizar"} kind="max" onClick={toggleMax} maximized={maximized} />
-        <TitleButton label="Fechar" kind="close" onClick={close} />
+        <TitleButton label="Fechar" kind="close" onClick={onCloseRequest} />
       </div>
     </header>
   );

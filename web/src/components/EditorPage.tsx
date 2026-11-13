@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CurveChart } from "./CurveChart";
 import { ParamField } from "./ParamField";
 import {
@@ -20,6 +20,18 @@ interface EditorPageProps {
 export function EditorPage({ showToast }: EditorPageProps) {
   const [mode, setMode] = useState<Mode>("classic");
   const [params, setParams] = useState<CurveParams>({ ...DEFAULT_PARAMS });
+  const [pulse, setPulse] = useState(false);
+  const pulseTimer = useRef<number | null>(null);
+
+  // qualquer mudança na curva dispara um pulso sutil no card do gráfico
+  useEffect(() => {
+    setPulse(true);
+    if (pulseTimer.current) window.clearTimeout(pulseTimer.current);
+    pulseTimer.current = window.setTimeout(() => setPulse(false), 240);
+    return () => {
+      if (pulseTimer.current) window.clearTimeout(pulseTimer.current);
+    };
+  }, [mode, params]);
 
   const set = <K extends keyof CurveParams>(key: K, value: CurveParams[K]) =>
     setParams((p) => ({ ...p, [key]: value }));
@@ -62,7 +74,7 @@ export function EditorPage({ showToast }: EditorPageProps) {
 
       <div className="editor-body">
         {/* gráfico + leituras */}
-        <div className="chart-card">
+        <div className={pulse ? "chart-card chart-card--pulse" : "chart-card"}>
           <CurveChart mode={mode} params={params} />
           <div className="readout-row" aria-label="Sensibilidade por velocidade">
             {READOUT_SPEEDS.map((v) => (
